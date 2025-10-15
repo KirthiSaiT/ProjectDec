@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Download, Trash2 } from 'lucide-react';
+import { Plus, Download, Trash2, Check } from 'lucide-react';
 
 interface Challenge {
   _id: string;
@@ -21,6 +21,10 @@ interface Challenge {
   fileUrl: string;
   createdAt: string;
   updatedAt: string;
+  // Add flag count property
+  flagCount?: number;
+  // Add property to indicate if any flags are confirmed correct
+  hasCorrectFlags?: boolean;
 }
 
 export default function CTFDetail() {
@@ -68,7 +72,32 @@ export default function CTFDetail() {
       const response = await fetch(`/api/challenges?ctfId=${id}`);
       const data = await response.json();
       if (data.success) {
-        setChallenges(data.data);
+        // Get flag count for each challenge
+        const challengesWithFlags = await Promise.all(
+          data.data.map(async (challenge: Challenge) => {
+            try {
+              const flagResponse = await fetch(`/api/flags?challengeId=${challenge._id}`);
+              const flagData = await flagResponse.json();
+              if (flagData.success) {
+                const flags = flagData.data;
+                const correctFlags = flags.filter((flag: any) => flag.isCorrect);
+                return {
+                  ...challenge,
+                  flagCount: flags.length,
+                  hasCorrectFlags: correctFlags.length > 0
+                };
+              }
+            } catch (error) {
+              console.error('Error fetching flags for challenge:', error);
+            }
+            return {
+              ...challenge,
+              flagCount: 0,
+              hasCorrectFlags: false
+            };
+          })
+        );
+        setChallenges(challengesWithFlags);
       }
     } catch (error) {
       console.error('Error fetching challenges:', error);
@@ -238,7 +267,14 @@ export default function CTFDetail() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {challenges.map((challenge) => (
-            <Card key={challenge._id} className={`bg-card border-border ${getCategoryClass(challenge.category)}`}>
+            <Card 
+              key={challenge._id} 
+              className={`bg-card border-2 ${
+                challenge.hasCorrectFlags 
+                  ? 'border-green-500 bg-green-500/5' 
+                  : 'border-border'
+              } ${getCategoryClass(challenge.category)}`}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium">
                   <a href={`/challenges/${challenge._id}`} className="hover:underline">
@@ -261,6 +297,18 @@ export default function CTFDetail() {
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {challenge.description}
                 </p>
+                {challenge.flagCount !== undefined && challenge.flagCount > 0 && (
+                  <div className="mt-2 flex items-center text-sm">
+                    <span className="text-muted-foreground">
+                      {challenge.flagCount} flag submission{challenge.flagCount !== 1 ? 's' : ''}
+                      {challenge.hasCorrectFlags && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                          <Check className="mr-1 h-3 w-3" /> Solved
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
                 {challenge.fileUrl && (
                   <Button variant="outline" size="sm" className="mt-3" asChild>
                     <a href={`/api/download?fileId=${challenge.fileUrl}`} download>

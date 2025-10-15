@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Download, Check, X } from 'lucide-react';
+import { Download, Check, X, Trash2 } from 'lucide-react';
 
 interface Challenge {
   _id: string;
@@ -238,23 +238,33 @@ export default function ChallengeDetail() {
           ) : (
             <div className="space-y-4">
               {flagSubmissions.map((flag) => (
-                <div key={flag._id} className={`p-4 rounded-lg border ${flag.isCorrect ? 'border-success bg-success/10' : 'border-border'}`}>
+                <div key={flag._id} className={`p-4 rounded-lg border-2 ${flag.isCorrect ? 'border-green-500 bg-green-500/10' : 'border-border'}`}>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-mono break-all">{flag.flagText}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        {flag.isCorrect && (
+                          <Check className="h-5 w-5 text-green-500" />
+                        )}
+                        <p className="font-mono break-all text-lg">{flag.flagText}</p>
+                      </div>
                       {flag.note && (
                         <p className="text-sm text-muted-foreground mt-2">{flag.note}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-2">
                         Submitted: {new Date(flag.createdAt).toLocaleString()}
+                        {flag.isCorrect && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                            Confirmed Correct
+                          </span>
+                        )}
                       </p>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col space-y-2 ml-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleMarkFlag(flag._id, !flag.isCorrect)}
-                        className={flag.isCorrect ? 'bg-success text-success-foreground' : ''}
+                        className={`w-10 h-10 ${flag.isCorrect ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
                       >
                         {flag.isCorrect ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                       </Button>
@@ -262,9 +272,9 @@ export default function ChallengeDetail() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteFlag(flag._id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="w-10 h-10 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
-                        Delete
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
