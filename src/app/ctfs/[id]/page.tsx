@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,16 @@ interface Challenge {
   hasCorrectFlags?: boolean;
 }
 
+interface CTF {
+  _id: string;
+  name: string;
+}
+
+interface Flag {
+  _id: string;
+  isCorrect: boolean;
+}
+
 export default function CTFDetail() {
   const router = useRouter();
   const params = useParams();
@@ -45,19 +55,12 @@ export default function CTFDetail() {
   });
   
   // Fetch CTF details and challenges
-  useEffect(() => {
-    if (id) {
-      fetchCTFDetails();
-      fetchChallenges();
-    }
-  }, [id]);
-  
-  const fetchCTFDetails = async () => {
+  const fetchCTFDetails = useCallback(async () => {
     try {
       const response = await fetch('/api/ctfs');
       const data = await response.json();
       if (data.success) {
-        const ctf = data.data.find((c: any) => c._id === id);
+        const ctf = data.data.find((c: CTF) => c._id === id);
         if (ctf) {
           setCtfName(ctf.name);
         }
@@ -65,9 +68,9 @@ export default function CTFDetail() {
     } catch (error) {
       console.error('Error fetching CTF details:', error);
     }
-  };
+  }, [id]);
   
-  const fetchChallenges = async () => {
+  const fetchChallenges = useCallback(async () => {
     try {
       const response = await fetch(`/api/challenges?ctfId=${id}`);
       const data = await response.json();
@@ -79,8 +82,8 @@ export default function CTFDetail() {
               const flagResponse = await fetch(`/api/flags?challengeId=${challenge._id}`);
               const flagData = await flagResponse.json();
               if (flagData.success) {
-                const flags = flagData.data;
-                const correctFlags = flags.filter((flag: any) => flag.isCorrect);
+                const flags: Flag[] = flagData.data;
+                const correctFlags = flags.filter((flag: Flag) => flag.isCorrect);
                 return {
                   ...challenge,
                   flagCount: flags.length,
@@ -102,7 +105,14 @@ export default function CTFDetail() {
     } catch (error) {
       console.error('Error fetching challenges:', error);
     }
-  };
+  }, [id]);
+  
+  useEffect(() => {
+    if (id) {
+      fetchCTFDetails();
+      fetchChallenges();
+    }
+  }, [id, fetchCTFDetails, fetchChallenges]);
   
   const handleAddChallenge = async () => {
     if (!newChallenge.title.trim() || !newChallenge.description.trim()) return;

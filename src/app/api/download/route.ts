@@ -17,12 +17,15 @@ export async function GET(req: NextRequest) {
     
     const { buffer, contentType, filename } = await downloadFile(fileId);
     
+    // Convert Node.js Buffer to Uint8Array for Web APIs
+    const uint8Array = new Uint8Array(buffer);
+    
     // Create headers for file download
     const headers = new Headers();
     headers.set('Content-Type', contentType);
     headers.set('Content-Disposition', `attachment; filename="${filename}"`);
     
-    return new Response(buffer, {
+    return new Response(uint8Array, {
       status: 200,
       headers
     });

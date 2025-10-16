@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Specify the root directory to silence the workspace warning
+  turbopack: {
+    root: "."
+  }
 };
 
 export default nextConfig;

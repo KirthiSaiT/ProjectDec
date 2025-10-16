@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -7,8 +7,12 @@ if (!MONGODB_URI) {
 }
 
 interface Cached {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+  conn: Connection | null;
+  promise: Promise<Connection> | null;
+}
+
+declare global {
+  var mongoose: Cached;
 }
 
 /**
@@ -16,13 +20,13 @@ interface Cached {
  * in development. This prevents connections from growing exponentially
  * during API Route usage.
  */
-let cached: Cached = (global as any).mongoose;
+let cached: Cached = global.mongoose;
 
 if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
-async function dbConnect() {
+async function dbConnect(): Promise<Connection> {
   if (cached.conn) {
     return cached.conn;
   }
@@ -33,7 +37,7 @@ async function dbConnect() {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      return mongoose;
+      return mongoose.connection;
     });
   }
   cached.conn = await cached.promise;
@@ -41,13 +45,3 @@ async function dbConnect() {
 }
 
 export default dbConnect;
-
-declare global {
-  namespace NodeJS {
-    interface Global {
-      mongoose: Cached;
-    }
-  }
-}
-
-(global as any).mongoose = (global as any).mongoose || {};

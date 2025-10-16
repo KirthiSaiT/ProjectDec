@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,14 +42,7 @@ export default function ChallengeDetail() {
   const [newNote, setNewNote] = useState('');
   
   // Fetch challenge details and flag submissions
-  useEffect(() => {
-    if (id) {
-      fetchChallenge();
-      fetchFlagSubmissions();
-    }
-  }, [id]);
-  
-  const fetchChallenge = async () => {
+  const fetchChallenge = useCallback(async () => {
     try {
       const response = await fetch(`/api/challenges/${id}`);
       const data = await response.json();
@@ -59,9 +52,9 @@ export default function ChallengeDetail() {
     } catch (error) {
       console.error('Error fetching challenge:', error);
     }
-  };
+  }, [id]);
   
-  const fetchFlagSubmissions = async () => {
+  const fetchFlagSubmissions = useCallback(async () => {
     try {
       const response = await fetch(`/api/flags?challengeId=${id}`);
       const data = await response.json();
@@ -71,7 +64,14 @@ export default function ChallengeDetail() {
     } catch (error) {
       console.error('Error fetching flag submissions:', error);
     }
-  };
+  }, [id]);
+  
+  useEffect(() => {
+    if (id) {
+      fetchChallenge();
+      fetchFlagSubmissions();
+    }
+  }, [id, fetchChallenge, fetchFlagSubmissions]);
   
   const handleSubmitFlag = async () => {
     if (!newFlag.trim()) return;

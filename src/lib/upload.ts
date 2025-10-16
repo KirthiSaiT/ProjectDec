@@ -1,6 +1,7 @@
 import { GridFSBucket, MongoClient, ObjectId } from 'mongodb';
 import { Writable } from 'stream';
 import { pipeline } from 'stream/promises';
+import { Readable } from 'stream';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const DATABASE_NAME = 'ctf_platform';
@@ -24,7 +25,7 @@ export async function uploadFile(fileBuffer: Buffer, filename: string, contentTy
     }
     
     // Create a readable stream from the buffer
-    const readable = require('stream').Readable.from(fileBuffer);
+    const readable = Readable.from(fileBuffer);
     
     // Upload the file
     const uploadStream = bucket.openUploadStream(filename, {
